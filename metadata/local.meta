@@ -1,0 +1,18 @@
+[app/ui]
+version = 6.1.1
+modtime = 1423562343.626753000
+
+[app/launcher]
+version = 6.1.1
+modtime = 1423562343.654834000
+
+[views/sophoscloudmigration]
+access = read : [ * ], write : [ admin, power ]
+export = none
+owner = hywelmatthews
+version = 6.2.1
+modtime = 1425983052.504910000
+
+[nav/default]
+version = 6.1.1
+modtime = 1423563481.963415000

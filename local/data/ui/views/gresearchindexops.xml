@@ -1,0 +1,174 @@
+<form>
+  <label>G-ResearchIndexerOps</label>
+  <fieldset submitButton="false">
+    <input type="time" token="field1">
+      <label>Select Time Range</label>
+      <default>
+        <earliestTime>-4h</earliestTime>
+        <latestTime>now</latestTime>
+      </default>
+    </input>
+    <input type="dropdown" token="indexer-name" searchWhenChanged="true">
+      <label>Indexer</label>
+      <populatingSearch earliest="0" latest="" fieldForLabel="indexer" fieldForValue="splunk_server">| dbinspect index=*  OR index=_* | table splunk_server | uniq | sort splunk_serversplunk_serverdbinspect index=*  OR index=_* | table splunk_server | uniq | sort splunk_server</populatingSearch>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <chart>
+        <title>Indexer Indexing</title>
+        <searchString>index=_internal source="*metrics.log*" group="per_index_thruput" NOT series="_*" host=*| timechart span=1m sum(kb) by host</searchString>
+        <earliestTime>$field1.earliest$</earliestTime>
+        <latestTime>$field1.latest$</latestTime>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.scale">log</option>
+        <option name="charting.axisY2.enabled">false</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">area</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">all</option>
+        <option name="charting.layout.splitSeries">1</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.placement">right</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <chart>
+        <title>splunk_server name stats</title>
+        <searchString>index=_* OR index=*  splunk_server=* | eval idx-svr=index."-".splunk_server | timechart span=10m count by idx-svr useother=f</searchString>
+        <earliestTime>$field1.earliest$</earliestTime>
+        <latestTime>$field1.latest$</latestTime>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.enabled">false</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">all</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.placement">right</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <table>
+        <title>Indexer Eventcount</title>
+        <searchString>| eventcount summarize=false index=* index=_* | search server=$indexer-name$ | rename count as EventCount  | table server index EventCount</searchString>
+        <earliestTime>$field1.earliest$</earliestTime>
+        <latestTime>$field1.latest$</latestTime>
+        <option name="wrap">false</option>
+        <option name="rowNumbers">false</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">cell</option>
+        <option name="count">100</option>
+      </table>
+    </panel>
+    <panel>
+      <table>
+        <title>Inedxer Current Size MB (from rest) by Index</title>
+        <searchString>| REST /services/data/indexes | search splunk_server=$indexer-name$ | table splunk_server title currentDBSizeMB</searchString>
+        <earliestTime>$field1.earliest$</earliestTime>
+        <latestTime>$field1.latest$</latestTime>
+        <option name="wrap">false</option>
+        <option name="rowNumbers">false</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">cell</option>
+        <option name="count">100</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <table>
+        <title>DBInspect by index and Category</title>
+        <searchString>| dbinspect index=* OR index=_* | search splunk_server=$indexer-name$ | rename state as category | stats min(startEpoch) as earliestTime max(endEpoch) as latestTime sum(sizeOnDiskMB) as MB by index category splunk_server | convert timeformat="%m/%d/%Y" ctime(earliestTime) as earliestTime ctime(latestTime) as latestTime</searchString>
+        <earliestTime>0</earliestTime>
+        <latestTime/>
+        <option name="wrap">true</option>
+        <option name="rowNumbers">false</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">cell</option>
+        <option name="count">100</option>
+      </table>
+    </panel>
+    <panel>
+      <table>
+        <title>Inedxer Eventcount, CurrentSizeMB and Retention by Index</title>
+        <searchString>| REST /services/data/indexes | search splunk_server=$indexer-name$ |  rename title as index | table splunk_server index currentDBSizeMB | join index [| eventcount summarize=false index=* OR index=_* | search server=$indexer-name$]  | join index [search index=_internal "FrozenTimePeriodInSecs" sourcetype=splunkd | eval frozenTimePeriodInDays=round(frozenTimePeriodInSecs/(3600*24),0) | eval frozenTimePeriodInYears=round(frozenTimePeriodInDays/365,0) | table idx host frozenTimePeriodInSecs frozenTimePeriodInDays frozenTimePeriodInYears | dedup idx,host  | sort idx | rename idx as index] |  rename count as EventCount | rename frozenTimePeriodInDays as RetentionDays | table splunk_server index EventCount  currentDBSizeMB  RetentionDays</searchString>
+        <earliest>-7d@h</earliest>
+        <latest>now</latest>
+        <option name="wrap">false</option>
+        <option name="rowNumbers">false</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">cell</option>
+        <option name="count">100</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <chart>
+        <title>Per Host Throughput By Indexer - last 15 minutes</title>
+        <searchString>index=_internal source="*metrics.log*" group="per_host_thruput" splunk_server=$indexer-name$ earliest=-15m | timechart span=10s count by host useother=f limit=30</searchString>
+        <earliest>-15m</earliest>
+        <latest>now</latest>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.enabled">false</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">area</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">all</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.placement">right</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <table>
+        <title>Index Earliest and Latest Dates</title>
+        <searchString>| dbinspect index=* | stats min(startEpoch) as earliestTime max(endEpoch) as latestTime sum(sizeOnDiskMB) as MB by index  | convert timeformat="%m/%d/%Y" ctime(earliestTime) as earliestTime ctime(latestTime) as latestTime</searchString>
+        <earliestTime>0</earliestTime>
+        <latestTime/>
+        <option name="wrap">true</option>
+        <option name="rowNumbers">false</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">cell</option>
+        <option name="count">100</option>
+      </table>
+    </panel>
+  </row>
+</form>
